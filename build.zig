@@ -14,22 +14,7 @@ pub fn build(b: *std.build.Builder) void {
     const exe = b.addExecutable("tcc-zig", "src/main.zig");
     exe.setTarget(target);
     exe.setBuildMode(mode);
-
-    // for (tcc_files) |tcc_file| {
-    //     const c_path = std.fs.path.join(b.allocator, &.{ "tinycc", tcc_file }) catch unreachable;
-    //     exe.addCSourceFile(c_path, &.{});
-    // }
-    exe.addIncludePath("tinycc");
-    exe.linkSystemLibrary("tcc");
-    exe.addLibPath("/Users/dante/src/github.com/dantecatalfamo/tcc-zig/tinycc");
-    const configure_step = b.addSystemCommand(&.{"./configure", "--enable-static", "--config-predefs=yes"});
-    configure_step.cwd = "./tinycc";
-    configure_step.setEnvironmentVariable("CFLAGS", "-DTCC_LIBTCC1='\"\"'");
-    const make_step = b.addSystemCommand(&.{"make"});
-    make_step.cwd = "./tinycc";
-    exe.step.dependOn(&configure_step.step);
-    exe.step.dependOn(&make_step.step);
-
+    addTcc(exe);
     exe.install();
 
     const run_cmd = exe.run();
@@ -47,6 +32,31 @@ pub fn build(b: *std.build.Builder) void {
 
     const test_step = b.step("test", "Run unit tests");
     test_step.dependOn(&exe_tests.step);
+}
+
+fn addTcc(exe: *std.build.LibExeObjStep) void {
+    // for (tcc_files) |tcc_file| {
+    //     const c_path = std.fs.path.join(b.allocator, &.{ "tinycc", tcc_file }) catch unreachable;
+    //     exe.addCSourceFile(c_path, &.{});
+    // }
+    // exe.addIncludePath("tinycc");
+    var b = exe.builder;
+    const src_path = std.fs.path.dirname(@src().file) orelse ".";
+    const tcc_path = std.fs.path.join(b.allocator, &.{ src_path, "tinycc" }) catch unreachable;
+
+    const configure_step = b.addSystemCommand(&.{"./configure", "--enable-static", "--config-predefs=yes"});
+    configure_step.cwd = "./tinycc";
+
+    const make_step = b.addSystemCommand(&.{"make"});
+    configure_step.setEnvironmentVariable("CFLAGS", "-DTCC_LIBTCC1='\"\"'");
+    make_step.cwd = "./tinycc";
+
+    exe.linkLibC();
+    exe.linkSystemLibrary("tcc");
+    exe.addLibPath(tcc_path);
+
+    exe.step.dependOn(&configure_step.step);
+    exe.step.dependOn(&make_step.step);
 }
 
 const tcc_files = [_][]const u8 {
