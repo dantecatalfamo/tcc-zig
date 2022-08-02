@@ -44,11 +44,13 @@ fn addTcc(exe: *std.build.LibExeObjStep) void {
     const src_path = std.fs.path.dirname(@src().file) orelse ".";
     const tcc_path = std.fs.path.join(b.allocator, &.{ src_path, "tinycc" }) catch unreachable;
 
-    const configure_step = b.addSystemCommand(&.{"./configure", "--enable-static", "--config-predefs=yes"});
+    const configure_step = b.addSystemCommand(&.{"./configure", "--enable-static", "--config-predefs=yes", "--extra-cflags=-fPIC -g -O2 -static", "--prefix=/usr",
+                                                 "--libdir=/usr/lib64"});
     configure_step.cwd = "./tinycc";
 
     const make_step = b.addSystemCommand(&.{"make"});
-    configure_step.setEnvironmentVariable("CFLAGS", "-DTCC_LIBTCC1='\"\"'");
+    // configure_step.setEnvironmentVariable("CFLAGS", "-DTCC_LIBTCC1=");
+    // configure_step.setEnvironmentVariable("CFLAGS", "-DTCC_LIBTCC1='\"\"'");
     make_step.cwd = "./tinycc";
 
     exe.linkLibC();

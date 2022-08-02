@@ -70,7 +70,7 @@ pub const TCCState = opaque {
     }
     /// equivalent to -Lpath option
     pub fn add_library_path(self: *TCCState, pathname: [:0]const u8) void {
-        tcc_add_library_path(self, pathname.ptr);
+        _ = tcc_add_library_path(self, pathname.ptr);
     }
     /// the library name is the same as the argument of the '-l' option
     pub fn add_library(self: *TCCState, library_name: [:0]const u8) !void {
